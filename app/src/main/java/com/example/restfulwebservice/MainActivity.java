@@ -1,51 +1,55 @@
 package com.example.restfulwebservice;
 
-import android.os.AsyncTask;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.TextView;
 
-public class MainActivity extends AppCompatActivity {
+import com.example.restfulwebservice.services.MyService;
 
-    private TextView output;
+public class MainActivity extends AppCompatActivity {
+    private static final String JSON_URL = "http://560057.youcanlearnit.net/services/json/itemsfeed.php";
+    TextView output;
+
+    private BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String message = intent.getStringExtra(MyService.MY_SERVICE_PAYLOAD);
+            output.append(message + "\n");
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        this.output = findViewById(R.id.output);
+        output = (TextView) findViewById(R.id.output);
+        LocalBroadcastManager.getInstance(getApplicationContext())
+                .registerReceiver(mBroadcastReceiver,
+                        new IntentFilter(MyService.MY_SERVICE_MESSAGE));
+    }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        LocalBroadcastManager.getInstance(getApplicationContext()).unregisterReceiver(mBroadcastReceiver);
     }
 
     public void runClickHandler(View view) {
-//        output.append("Button Clicked\n");
-        MyAsyncTask task=new MyAsyncTask();
-        task.execute("String 1","String 2","String 3");
+        Intent intent = new Intent(this, MyService.class);
+        intent.setData(Uri.parse(JSON_URL));
+        startService(intent);
+        startService(intent);
+        startService(intent);
     }
 
     public void clearClickHandler(View view) {
         output.setText("");
-    }
-    private class MyAsyncTask extends AsyncTask<String,String,Void> {
-
-        @Override
-        protected Void doInBackground(String... strings) {
-            for (String string : strings) {
-                publishProgress(string);
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            return null;
-        }
-
-        @Override
-        protected void onProgressUpdate(String... values) {
-            super.onProgressUpdate(values);
-            output.append(values[0]+"\n");
-        }
     }
 }
